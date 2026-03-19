@@ -3,52 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
+    <title>IKM-WATCH</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 700px;
+            max-width: 800px;
             margin: 2em auto;
-            line-height: 1.6;
-            color: #222;
-            padding: 0 1em;
+            background-color: #1a1a1a;
+            color: #eee;
+            text-align: center;
         }
-        h1 {
-            font-size: 1.5em;
-            margin-bottom: 0.5em;
+
+        /* --- THE ORIGINAL CONTENT --- */
+        #original-content {
+            display: none; /* Hidden while TV is active */
+            opacity: 0;
+            transition: opacity 1.5s ease-in;
         }
-        h2 {
-            font-size: 1.2em;
-            margin-top: 1.5em;
-            margin-bottom: 0.5em;
-            color: #444;
+
+        /* --- THE TV SET --- */
+        #tv-wrapper {
+            transition: opacity 1s ease-out;
+            margin-bottom: 50px;
         }
-        ul {
-            padding-left: 1.5em;
+
+        .antennas {
+            width: 120px; height: 50px; margin: 0 auto -10px auto; position: relative;
         }
-        .section-emoji {
-            font-weight: bold;
-            margin-top: 2em;
-            margin-bottom: 0.5em;
+        .antennas::before, .antennas::after {
+            content: ""; position: absolute; bottom: 0; width: 4px; height: 70px; background: #444;
+        }
+        .antennas::before { left: 40px; transform: rotate(-30deg); }
+        .antennas::after { right: 40px; transform: rotate(30deg); }
+
+        #tv-frame {
+            position: relative;
+            width: 100%; max-width: 600px; aspect-ratio: 16 / 9;
+            background: #333; margin: 0 auto;
+            border: 15px solid #4a4a4a; border-bottom-width: 50px; border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: hidden;
+        }
+
+        #screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; display: flex; align-items: center; justify-content: center;
+        }
+
+        #timer-display { color: #22ff22; font-family: 'Courier New', monospace; font-size: 1.5em; }
+
+        /* Animation for the screen popping on */
+        .screen-warming-up {
+            animation: turn-on 0.7s ease-out forwards;
+        }
+
+        @keyframes turn-on {
+            0% { transform: scale(1, 0.005); background: #fff; }
+            100% { transform: scale(1, 1); background: transparent; }
         }
     </style>
 </head>
 <body>
-    <a href="https://www.youtube.com/@Gabriel.chatys">
-        <img src="Images/Youtube.png" width="50" height="50"></img>
-    </a>
 
-    <h1>IKM-WATCH Is A Website Where You Can Watch My Show</h1>
+    <div id="tv-wrapper">
+        <div class="antennas"></div>
+        <div id="tv-frame">
+            <div id="screen">
+                <div id="timer-display">SYNCING...</div>
+                <div id="player" style="width:100%; height:100%;"></div>
+            </div>
+        </div>
+        <h2 id="status-text">Oh Get Ready</h2>
+    </div>
 
-    <h1>Playlist</h1>
+    <div id="original-content">
+        <a href="https://www.youtube.com/@Gabriel.chatys">
+            <img src="Images/Youtube.png" width="50" height="50" alt="YouTube">
+        </a>
+        <h1>IKM-WATCH</h1>
+        <p>EP 1 Teaser 1</p>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/-q6UkV6bLD4" frameborder="0" allowfullscreen></iframe>
+        <p>EP 1 Teaser 2</p>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/25nzMLjrIcQ" frameborder="0" allowfullscreen></iframe>
+    </div>
 
-    <p>EP 1 Teaser 1</p>
+    <script src="https://www.youtube.com/iframe_api"></script>
 
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/-q6UkV6bLD4?si=XBWxwVdH6xHzlgQ3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    <script>
+        // 1. SET YOUR TARGET DATE & VIDEO ID HERE
+        const targetDate = new Date('2026-04-20T12:00:00').getTime();
+        const myVideoID = 'VIDEO_ID'; // Replace with your actual YouTube ID
 
-    <p>EP 1 Teaser 2</p>
+        const tvWrapper = document.getElementById('tv-wrapper');
+        const ogContent = document.getElementById('original-content');
+        const timerDisplay = document.getElementById('timer-display');
+        let player;
 
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/25nzMLjrIcQ?si=xYOxhSdZKQTrARD0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        // 2. THIS STARTS THE CLOCK IMMEDIATELY
+        function checkStatus() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
 
+            if (distance > 0) {
+                // It is still 32 days away (or more/less), so show the countdown
+                updateTimer(distance);
+                setTimeout(checkStatus, 1000);
+            } else {
+                // The time has arrived! Turn on the TV
+                startVideo();
+            }
+        }
+
+        function updateTimer(dist) {
+            const d = Math.floor(dist / (1000 * 60 * 60 * 24));
+            const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((dist % (1000 * 60)) / 1000);
+            
+            // This replaces "SYNCING..." with the actual time
+            timerDisplay.innerHTML = `PREMIERE IN:<br>${d}d ${h}h ${m}m ${s}s`;
+        }
+
+        function startVideo() {
+            if (timerDisplay.style.display === 'none') return;
+
+            timerDisplay.style.display = 'none';
+            document.getElementById('screen').classList.add('screen-warming-up');
+            
+            // Use the YouTube API to play the video
+            if (typeof YT !== 'undefined' && YT.Player) {
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: myVideoID,
+                    playerVars: { 'autoplay': 1, 'controls': 1 },
+                    events: { 'onStateChange': onPlayerStateChange }
+                });
+            } else {
+                // Fallback if the API isn't ready
+                document.getElementById('player').innerHTML = 
+                    `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${myVideoID}?autoplay=1" frameborder="0" allowfullscreen></iframe>`;
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                revertToOG();
+            }
+        }
+
+        function revertToOG() {
+            tvWrapper.style.opacity = '0';
+            setTimeout(() => {
+                tvWrapper.style.display = 'none';
+                ogContent.style.display = 'block';
+                setTimeout(() => { ogContent.style.opacity = '1'; }, 50);
+            }, 1000);
+        }
+
+        // FORCE THE CLOCK TO START NOW
+        checkStatus();
+
+        // This just sits quietly until the API is needed
+        function onYouTubeIframeAPIReady() {
+            console.log("YouTube API is ready in the background.");
+        }
+    </script>
 </body>
 </html>
